@@ -40,15 +40,20 @@ int Server::init()
 void Server::onNewConnection()
 {
     QWebSocket* pSocket = m_pWebSocketServer->nextPendingConnection();
-    connect(pSocket,&QWebSocket::textMessageReceived,this,&Server::processTextMessage);
-    connect(pSocket,&QWebSocket::binaryMessageReceived,this,&Server::processBinaryMessgae);
-    connect(pSocket,&QWebSocket::disconnected,this,&Server::socketDisconnected);
+    connect(pSocket,&QWebSocket::textMessageReceived,this,&Server::processTextMessage);//收到客户端文本消息
+    connect(pSocket,&QWebSocket::binaryMessageReceived,this,&Server::processBinaryMessgae);//收到客户端二进制消息
+    connect(pSocket,&QWebSocket::disconnected,this,&Server::socketDisconnected);//客户端离线
     m_clients.push_back(pSocket);
 }
 
 void Server::processTextMessage(QString qStrMessage)
 {
      qDebug() << "agent-server receive message from client, text = " << qStrMessage;
+     QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
+     if (pClient)
+     {
+         pClient->sendTextMessage("heartbeat-server");
+     }
 }
 
 void Server::processBinaryMessgae(QByteArray qStrMessage)

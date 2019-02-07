@@ -193,6 +193,9 @@ release/moc_client.cpp: C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QObject \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtNetwork/qtcpsocket.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtWebSockets/qwebsockets_global.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtWebSockets/qwebsocketprotocol.h \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QRunnable \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/qrunnable.h \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QMutex \
 		../AgentClient/client.h \
 		release/moc_predefs.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/bin/moc.exe
@@ -305,7 +308,10 @@ release/main.o: ../AgentClient/main.cpp C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/Q
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtNetwork/qsslsocket.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtNetwork/qtcpsocket.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtWebSockets/qwebsockets_global.h \
-		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtWebSockets/qwebsocketprotocol.h
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtWebSockets/qwebsocketprotocol.h \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QRunnable \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/qrunnable.h \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QMutex
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\main.o ..\AgentClient\main.cpp
 
 release/client.o: ../AgentClient/client.cpp ../AgentClient/client.h \
@@ -399,7 +405,15 @@ release/client.o: ../AgentClient/client.cpp ../AgentClient/client.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtNetwork/qtcpsocket.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtWebSockets/qwebsockets_global.h \
 		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtWebSockets/qwebsocketprotocol.h \
-		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QDebug
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QRunnable \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/qrunnable.h \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QMutex \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QDebug \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QThread \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/qthread.h \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QThreadPool \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/qthreadpool.h \
+		C:/Qt/Qt5.9.1/5.9.1/mingw53_32/include/QtCore/QMutexLocker
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\client.o ..\AgentClient\client.cpp
 
 release/moc_client.o: release/moc_client.cpp 
