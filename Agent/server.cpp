@@ -48,9 +48,7 @@ void Server::onNewConnection()
 
 void Server::processTextMessage(QString qStrMessage)
 {
-    //QWebSocket* pClient = qobject_cast<QWebSocket*>(sender());
-    //qDebug() << QString("agent-server receive message from client, text = [%s]").arg(qStrMessage.toStdString().c_str());
-    qDebug() << "agent-server receive message from client, text = " << qStrMessage;
+     qDebug() << "agent-server receive message from client, text = " << qStrMessage;
 }
 
 void Server::processBinaryMessgae(QByteArray qStrMessage)

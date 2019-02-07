@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QtWebSockets/qwebsocket.h>
+#include <QAbstractSocket>
 
 class Client : public QObject
 {
@@ -11,11 +12,15 @@ public:
     Client();
     explicit Client(const QUrl& url,QObject* parent=nullptr);
     ~Client();
+public:
+    void connectToServer();
+    void reconnect();
 Q_SIGNALS:
     void closed();
 private Q_SLOTS:
     void onConnected();
     void onTextMessageReceived(QString qStrMessage);
+    void onError(QAbstractSocket::SocketError error);
 private:
     QWebSocket m_webSocket;
     QUrl m_url;
