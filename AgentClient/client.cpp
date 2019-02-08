@@ -15,6 +15,8 @@ Client::Client(const QUrl &url, QObject *parent):
 {
     m_pHeartbeatTask = new HeartBeatTask(this);
     connect(m_pHeartbeatTask,&HeartBeatTask::send,this,&Client::onSend);
+    connect(m_pHeartbeatTask,&HeartBeatTask::heartBeatOvertime,this,&Client::onReconnect);
+
     QThreadPool::globalInstance()->start(m_pHeartbeatTask);
 
     qDebug() << "websocket server: " << url;
@@ -40,7 +42,6 @@ void Client::reconnect()
 {
     qDebug()<<"client bengin to reconnect...";
     m_webSocket.abort();
-    //m_webSocket.close();
     QMutexLocker locker(&m_MutexConnect);
     m_bConnect = false;
     connectToServer();
@@ -75,6 +76,7 @@ void Client::onConnected()
 void Client::onTextMessageReceived(QString qStrMessage)
 {
     qDebug()<<"get textmessage from server, text = " << qStrMessage;
+    m_pHeartbeatTask->setLastHeart();
 }
 
 void Client::onError(QAbstractSocket::SocketError error)
@@ -96,6 +98,11 @@ void Client::onError(QAbstractSocket::SocketError error)
 void Client::onSend(QString qStrMessage)
 {
     sendMessage(qStrMessage);
+}
+
+void Client::onReconnect()
+{
+    reconnect();
 }
 
 
@@ -123,8 +130,7 @@ void HeartBeatTask::run()
         if(true == m_parent->isConnect() && iCount == 0)
         {
             //建立成功了，可以发送心跳
-            //m_parent->sendMessage("heartbeat-client");
-            emit send("heartbeat-client");
+            sendHeartBeat();
             iCount++;
         }
         else if(iCount != 0)
@@ -140,4 +146,40 @@ void HeartBeatTask::run()
             QThread::msleep(2000);
         }
     }
+}
+
+void HeartBeatTask::setLastHeart()
+{
+    QMutexLocker locker(&m_MutexHeart);
+    if(m_vecHeart.empty())
+    {
+        m_vecHeart.push_back(1);
+        return;
+    }
+
+    int index = m_vecHeart.size();
+    m_vecHeart[index-1] = 1;
+}
+
+void HeartBeatTask::sendHeartBeat()
+{
+    QMutexLocker locker(&m_MutexHeart);
+    //检查前2次心跳是否正常
+    if(m_vecHeart.empty() || m_vecHeart.size() == 1)
+    {
+    }
+    else
+    {
+        int index = m_vecHeart.size();
+        if(m_vecHeart[index-1] == 0 && m_vecHeart[index-2] == 0)
+        {
+            //心跳超时
+            qDebug()<<"heartbeat overtime";
+            emit heartBeatOvertime();
+            m_vecHeart.clear();
+            return;
+        }
+    }
+    emit send("heartbeat-client");
+    m_vecHeart.push_back(0);
 }

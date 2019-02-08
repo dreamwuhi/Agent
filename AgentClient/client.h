@@ -6,6 +6,7 @@
 #include <QAbstractSocket>
 #include <QRunnable>
 #include <QMutex>
+#include <QVector>
 
 QT_FORWARD_DECLARE_CLASS(Client)
 
@@ -15,10 +16,15 @@ class HeartBeatTask : public QObject, public QRunnable
 public:
     HeartBeatTask(Client* pClient = nullptr);
     void run();
+    void setLastHeart();
+    void sendHeartBeat();
 Q_SIGNALS:
     void send(QString qStrMessage);
+    void heartBeatOvertime();
 private:
     Client* m_parent = nullptr;
+    QVector<int> m_vecHeart;
+    QMutex m_MutexHeart;
 };
 
 class Client : public QObject
@@ -41,6 +47,7 @@ private Q_SLOTS:
     void onTextMessageReceived(QString qStrMessage);
     void onError(QAbstractSocket::SocketError error);
     void onSend(QString qStrMessage);
+    void onReconnect();
 private:
     QWebSocket m_webSocket;
     QUrl m_url;
