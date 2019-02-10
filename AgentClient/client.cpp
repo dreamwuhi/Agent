@@ -16,12 +16,11 @@ Client::Client(const QUrl &url, QObject *parent):
     m_pHeartbeatTask = new HeartBeatTask(this);
     connect(m_pHeartbeatTask,&HeartBeatTask::send,this,&Client::onSend);
     connect(m_pHeartbeatTask,&HeartBeatTask::heartBeatOvertime,this,&Client::onReconnect);
-
     QThreadPool::globalInstance()->start(m_pHeartbeatTask);
 
     qDebug() << "websocket server: " << url;
     connect(&m_webSocket,&QWebSocket::connected,this,&Client::onConnected);
-    connect(&m_webSocket,&QWebSocket::disconnected,this,&Client::closed);
+    //connect(&m_webSocket,&QWebSocket::disconnected,this,&Client::closed);
     typedef void(QWebSocket:: *errorSingnal)(QAbstractSocket::SocketError);
     connect(&m_webSocket,static_cast<errorSingnal>(&QWebSocket::error),this,&Client::onError);
 
@@ -68,9 +67,8 @@ int Client::sendMessage(const QString& qStrMessage)
 void Client::onConnected()
 {
     qDebug() << "client connect to server succ";
-    //connect(&m_webSocket,&QWebSocket::textMessageReceived,this,&Client::onTextMessageReceived);//客户端收到服务端消息
     QMutexLocker locker(&m_MutexConnect);
-    m_bConnect = true;
+    m_bConnect = true;//网络建立成功的标记
 }
 
 void Client::onTextMessageReceived(QString qStrMessage)

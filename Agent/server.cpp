@@ -2,6 +2,7 @@
 #include <QtWebSockets/qwebsocket.h>
 #include <QtWebSockets/qwebsocketserver.h>
 #include <QDebug>
+#include "database.h"
 
 Server::Server()
 {
@@ -24,6 +25,12 @@ Server::~Server()
 
 int Server::init()
 {
+    if(0 != Database::getInstance()->init())
+    {
+        qDebug()<<"init database fail";
+        return -1;
+    }
+
     if(false == m_pWebSocketServer->listen(QHostAddress::Any,m_nPort))
     {
         qDebug() << QString("agent-server listen fail , port = [%d]").arg(m_nPort);
