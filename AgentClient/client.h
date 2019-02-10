@@ -27,6 +27,18 @@ private:
     QMutex m_MutexHeart;
 };
 
+class RegisterTask : public QObject, public QRunnable
+{
+   Q_OBJECT
+public:
+    RegisterTask();
+    void run();
+    QString getRegisterMsg(const QString& username, const QString& password);
+Q_SIGNALS:
+    void exitRegister();
+    void send(QString qStrMessage);
+};
+
 class Client : public QObject
 {
     Q_OBJECT

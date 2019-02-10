@@ -3,6 +3,8 @@
 #include <QtWebSockets/qwebsocketserver.h>
 #include <QDebug>
 #include "database.h"
+#include "register.h"
+#include "messagehandle.h"
 
 Server::Server()
 {
@@ -30,6 +32,8 @@ int Server::init()
         qDebug()<<"init database fail";
         return -1;
     }
+    //cregister::getInstance()->run();
+
 
     if(false == m_pWebSocketServer->listen(QHostAddress::Any,m_nPort))
     {
@@ -56,10 +60,14 @@ void Server::onNewConnection()
 void Server::processTextMessage(QString qStrMessage)
 {
      qDebug() << "agent-server receive message from client, text = " << qStrMessage;
+     //解析消息体
+     messageHandle msgHandle;
+     msgHandle.parseMessage(qStrMessage.toStdString().c_str());
+     QString outMsg = msgHandle.getResultMessage();
      QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
      if (pClient)
      {
-         pClient->sendTextMessage("heartbeat-server");
+         pClient->sendTextMessage(outMsg);
      }
 }
 

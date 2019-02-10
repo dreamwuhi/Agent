@@ -3,6 +3,9 @@
 #include <QThread>
 #include <QThreadPool>
 #include <QMutexLocker>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <iostream>
 
 Client::Client()
 {
@@ -69,11 +72,15 @@ void Client::onConnected()
     qDebug() << "client connect to server succ";
     QMutexLocker locker(&m_MutexConnect);
     m_bConnect = true;//网络建立成功的标记
+
+    RegisterTask* pRegisterTask = new RegisterTask;
+    connect(pRegisterTask,&RegisterTask::send,this,&Client::onSend);
+    QThreadPool::globalInstance()->start(pRegisterTask);
 }
 
 void Client::onTextMessageReceived(QString qStrMessage)
 {
-    qDebug()<<"get textmessage from server, text = " << qStrMessage;
+    //qDebug()<<"get textmessage from server, text = " << qStrMessage;
     m_pHeartbeatTask->setLastHeart();
 }
 
@@ -180,4 +187,87 @@ void HeartBeatTask::sendHeartBeat()
     }
     emit send("heartbeat-client");
     m_vecHeart.push_back(0);
+}
+
+RegisterTask::RegisterTask()
+{
+
+}
+
+void RegisterTask::run()
+{
+    std::string strUsername = "";
+    std::string strPassword = "";
+    std::string strConfigmPassword = "";
+
+    std::cout << "please input username: ";
+    std::cin >> strUsername;
+    std::cout << "please input password: ";
+    std::cin >> strPassword;
+    std::cout << "please confim password: ";
+    std::cin >> strConfigmPassword;
+
+    if(strUsername.empty())
+    {
+        std::cout << "error: username is empty"<< std::endl;
+        emit exitRegister();
+        return;
+    }
+
+    if(strUsername.length() > 16)
+    {
+        std::cout << "error: username should be less than 16"<<std::endl;
+        emit exitRegister();
+        return;
+    }
+
+    if(strPassword.empty())
+    {
+        std::cout<<"error: password is empty" << std::endl;
+        emit exitRegister();
+        return;
+    }
+
+    if(strPassword.length() > 32)
+    {
+        std::cout << "error: password should be less than 32"<<std::endl;
+        emit exitRegister();
+        return;
+    }
+
+    if(strConfigmPassword.empty())
+    {
+        std::cout<<"error: confirm password is empty"<<std::endl;
+        emit exitRegister();
+        return;
+    }
+
+    if(strConfigmPassword.length() > 32)
+    {
+        std::cout<<"error: confirm password should be less than 32"<<std::endl;
+        emit exitRegister();
+        return;
+    }
+
+    if(strConfigmPassword != strPassword)
+    {
+        std::cout << "error: password is not equal";
+        emit exitRegister();
+        return;
+    }
+
+    emit send(getRegisterMsg(strUsername.c_str(),strPassword.c_str()));
+}
+
+QString RegisterTask::getRegisterMsg(const QString& username, const QString& password)
+{
+    QJsonDocument dom;
+    QJsonObject paramsObj;
+    paramsObj.insert("username",username);
+    paramsObj.insert("password",password);
+    QJsonObject json;
+    json.insert("type","register");
+    json.insert("params",QJsonValue(paramsObj));
+    dom.setObject(json);
+    return dom.toJson(QJsonDocument::Compact);
 }
