@@ -32,6 +32,12 @@ void messageHandle::parseMessage(const char *szMessage)
         return;
     }
 
+    if(!dom.object().contains("msgId"))
+    {
+        qDebug() << "json not contains msgId";
+        return;
+    }
+
     QJsonValue value = dom.object().value("type");
     QString msgType = value.toString();
     if(msgType == "register")
@@ -101,6 +107,7 @@ void messageHandle::registerMsg(QJsonDocument& dom)
         resultParamsObj.insert("msg","");
     }
     json.insert("type","register");
+    json.insert("msgId",dom.object().value("msgId"));
     json.insert("params",QJsonValue(resultParamsObj));
 
     QJsonDocument resultDom;

@@ -33,7 +33,7 @@ class RegisterTask : public QObject, public QRunnable
 public:
     RegisterTask();
     void run();
-    QString getRegisterMsg(const QString& username, const QString& password);
+    QString getRegisterMsg(const QString& username, const QString& password, const int& msgId);
 Q_SIGNALS:
     void exitRegister();
     void send(QString qStrMessage);

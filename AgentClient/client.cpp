@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <iostream>
+#include "messagehandle.h"
 
 Client::Client()
 {
@@ -81,6 +82,7 @@ void Client::onConnected()
 void Client::onTextMessageReceived(QString qStrMessage)
 {
     //qDebug()<<"get textmessage from server, text = " << qStrMessage;
+    messageHandle::getInstance()->paraseMsg(qStrMessage.toStdString().c_str());
     m_pHeartbeatTask->setLastHeart();
 }
 
@@ -135,7 +137,7 @@ void HeartBeatTask::run()
         if(true == m_parent->isConnect() && iCount == 0)
         {
             //建立成功了，可以发送心跳
-            sendHeartBeat();
+            //sendHeartBeat();
             iCount++;
         }
         else if(iCount != 0)
@@ -256,10 +258,31 @@ void RegisterTask::run()
         return;
     }
 
-    emit send(getRegisterMsg(strUsername.c_str(),strPassword.c_str()));
+
+    int msgId = messageHandle::getInstance()->getNextMessageId();
+    QSemaphore* pSem = new QSemaphore(0);
+    message* pMsg = new message(msgId,pSem);
+    if(0 != messageHandle::getInstance()->addMessage(pMsg))
+    {
+        qDebug() << "push message into list fail";
+        emit exitRegister();
+        return;
+    }
+    emit send(getRegisterMsg(strUsername.c_str(),strPassword.c_str(),msgId));
+
+    if(false == pSem->tryAcquire(1,1000*10))//等待3秒
+    {
+        messageHandle::getInstance()->deleteMessage(msgId);
+    }
+
+    //处理收到的消息响应
+    QString responseMsg = messageHandle::getInstance()->getMessage(msgId);
+    qDebug() << responseMsg;
+    //消息回收
+    messageHandle::getInstance()->deleteMessage(msgId);
 }
 
-QString RegisterTask::getRegisterMsg(const QString& username, const QString& password)
+QString RegisterTask::getRegisterMsg(const QString& username, const QString& password, const int& msgId)
 {
     QJsonDocument dom;
     QJsonObject paramsObj;
@@ -267,6 +290,7 @@ QString RegisterTask::getRegisterMsg(const QString& username, const QString& pas
     paramsObj.insert("password",password);
     QJsonObject json;
     json.insert("type","register");
+    json.insert("msgId",msgId);
     json.insert("params",QJsonValue(paramsObj));
     dom.setObject(json);
     return dom.toJson(QJsonDocument::Compact);
