@@ -8,6 +8,7 @@ public:
     static Database* getInstance();
     int init();
     int setUser(const char* szUsername,const char* szPassword);
+    int getUser(const char* szUsername,const char* szPassword);
 private:
     Database(){}
     ~Database()

@@ -31,13 +31,6 @@ int Database::init()
     }
     qDebug()<<"open database succ";
 
-//    QFile dbFile("server.db");
-//    if(dbFile.exists())
-//    {
-//        qDebug() << "server.db is existed";
-//        return 0;
-//    }
-
     QFile file("./debug/core.sql");
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -104,5 +97,43 @@ int Database::setUser(const char *szUsername, const char *szPassword)
         qDebug() << "db exec fail , error = " << query.lastError();
         return -1;
     }
+    return 0;
+}
+
+int Database::getUser(const char *szUsername, const char *szPassword)
+{
+    if(szUsername == nullptr)
+    {
+        qDebug() << "username is empty";
+        return -1;
+    }
+
+    if(szPassword == nullptr)
+    {
+        qDebug() << "password is empty";
+        return -1;
+    }
+
+    QSqlQuery query(m_sqlDb);
+    query.prepare("select password FROM user WHERE username = ?");
+    query.bindValue(0,szUsername);
+    if(false == query.exec())
+    {
+        qDebug() << "db exec fail , error = " << query.lastError();
+        return -1;
+    }
+    if(false == query.next())
+    {
+        qDebug() << "no hit row";
+        return -1;
+    }
+
+    QString result = query.value(0).toString();
+    if(result.compare(szPassword) != 0)
+    {
+        qDebug() << "password is not correct";
+        return -1;
+    }
+
     return 0;
 }

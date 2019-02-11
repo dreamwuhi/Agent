@@ -15,6 +15,7 @@ public:
         return m_strResultMessage;
     }
     void registerMsg(QJsonDocument& dom);
+    void signinMsg(QJsonDocument& dom);
 private:
     QString m_strResultMessage = "";
 };

@@ -31,12 +31,44 @@ class RegisterTask : public QObject, public QRunnable
 {
    Q_OBJECT
 public:
-    RegisterTask();
+    RegisterTask(Client* parent=nullptr):m_parent(parent)
+    {}
     void run();
     QString getRegisterMsg(const QString& username, const QString& password, const int& msgId);
 Q_SIGNALS:
     void exitRegister();
     void send(QString qStrMessage);
+private:
+    Client* m_parent;
+};
+
+class SigninTask : public QObject , public QRunnable
+{
+    Q_OBJECT
+public:
+    SigninTask(Client* parent = nullptr) : m_parent(parent)
+    {}
+    void run();
+    QString getSigninMsg(const QString& username, const QString& password, const int& msgId);
+Q_SIGNALS:
+    void send(QString qStrMessage);
+private:
+    Client* m_parent;
+};
+
+class MainTask : public QObject , public QRunnable
+{
+  Q_OBJECT
+public:
+    MainTask(Client* parent=nullptr):m_parent(parent)
+    {}
+    void run();
+Q_SIGNALS:
+    void exitMain();
+private Q_SLOTS:
+    //void onExitRegister();
+private:
+    Client* m_parent;
 };
 
 class Client : public QObject
@@ -49,17 +81,20 @@ public:
 public:
     void connectToServer();
     void reconnect();
+    void setExit();
     bool isExit();
     bool isConnect();
     int sendMessage(const QString& qStrMessage);
 Q_SIGNALS:
     void closed();
+public Q_SLOTS:
+    void onSend(QString qStrMessage);
 private Q_SLOTS:
     void onConnected();
     void onTextMessageReceived(QString qStrMessage);
     void onError(QAbstractSocket::SocketError error);
-    void onSend(QString qStrMessage);
     void onReconnect();
+    void onClose();
 private:
     QWebSocket m_webSocket;
     QUrl m_url;
@@ -68,6 +103,7 @@ private:
     bool m_bConnect = false;
     QMutex m_MutexExit;
     QMutex m_MutexConnect;
+    MainTask* m_pMainTask = nullptr;
 };
 
 #endif // CLIENT_H

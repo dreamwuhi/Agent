@@ -44,9 +44,9 @@ void messageHandle::parseMessage(const char *szMessage)
     {
         registerMsg(dom);
     }
-    else
+    else if(msgType == "signin")
     {
-
+        signinMsg(dom);
     }
 }
 
@@ -107,6 +107,71 @@ void messageHandle::registerMsg(QJsonDocument& dom)
         resultParamsObj.insert("msg","");
     }
     json.insert("type","register");
+    json.insert("msgId",dom.object().value("msgId"));
+    json.insert("params",QJsonValue(resultParamsObj));
+
+    QJsonDocument resultDom;
+    resultDom.setObject(json);
+    m_strResultMessage = resultDom.toJson(QJsonDocument::Compact);
+}
+
+void messageHandle::signinMsg(QJsonDocument &dom)
+{
+    QJsonObject domObject = dom.object();
+    if(!domObject.contains("params"))
+    {
+        qDebug() << "json not contains param";
+        return;
+    }
+
+    if(!domObject.value("params").isObject())
+    {
+        qDebug() << "params is not an object";
+        return;
+    }
+
+    QJsonObject paramsObj = domObject.value("params").toObject();
+    if(!paramsObj.contains("username"))
+    {
+        qDebug() << "no username key";
+        return;
+    }
+
+    if(!paramsObj.contains("password"))
+    {
+        qDebug() << "no password key";
+        return;
+    }
+
+    if(!paramsObj.value("username").isString())
+    {
+        qDebug() << "username key is not string";
+        return;
+    }
+
+    if(!paramsObj.value("password").isString())
+    {
+        qDebug() << "password key is not string";
+        return;
+    }
+
+    QString username = paramsObj.value("username").toString();
+    QString password = paramsObj.value("password").toString();
+
+    QJsonObject resultParamsObj;
+    QJsonObject json;
+    if(0 != Database::getInstance()->getUser(username.toStdString().c_str(),password.toStdString().c_str()))
+    {
+        qDebug() << "signin fail, username = " << username << " , password = " << password;
+        resultParamsObj.insert("code","101");
+        resultParamsObj.insert("msg","signin fail");
+    }
+    else
+    {
+        resultParamsObj.insert("code","0");
+        resultParamsObj.insert("msg","");
+    }
+    json.insert("type","signin");
     json.insert("msgId",dom.object().value("msgId"));
     json.insert("params",QJsonValue(resultParamsObj));
 

@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <iostream>
 #include "messagehandle.h"
+#include <QCoreApplication>
 
 Client::Client()
 {
@@ -50,6 +51,12 @@ void Client::reconnect()
     connectToServer();
 }
 
+void Client::setExit()
+{
+    QMutexLocker locker(&m_MutexExit);
+    m_bExit = true;
+}
+
 bool Client::isExit()
 {
     QMutexLocker locker(&m_MutexExit);
@@ -74,9 +81,12 @@ void Client::onConnected()
     QMutexLocker locker(&m_MutexConnect);
     m_bConnect = true;//网络建立成功的标记
 
-    RegisterTask* pRegisterTask = new RegisterTask;
-    connect(pRegisterTask,&RegisterTask::send,this,&Client::onSend);
-    QThreadPool::globalInstance()->start(pRegisterTask);
+    if(m_pMainTask==nullptr)
+    {
+        m_pMainTask = new MainTask(this);
+        connect(m_pMainTask,&MainTask::exitMain,this,&Client::onClose);
+        QThreadPool::globalInstance()->start(m_pMainTask);
+    }
 }
 
 void Client::onTextMessageReceived(QString qStrMessage)
@@ -110,6 +120,13 @@ void Client::onSend(QString qStrMessage)
 void Client::onReconnect()
 {
     reconnect();
+}
+
+void Client::onClose()
+{
+    setExit();
+    bool bRet = QThreadPool::globalInstance()->waitForDone(3000);
+    QCoreApplication::quit();
 }
 
 
@@ -191,11 +208,6 @@ void HeartBeatTask::sendHeartBeat()
     m_vecHeart.push_back(0);
 }
 
-RegisterTask::RegisterTask()
-{
-
-}
-
 void RegisterTask::run()
 {
     std::string strUsername = "";
@@ -253,7 +265,7 @@ void RegisterTask::run()
 
     if(strConfigmPassword != strPassword)
     {
-        std::cout << "error: password is not equal";
+        std::cout << "error: password is not equal"<<std::endl;
         emit exitRegister();
         return;
     }
@@ -270,9 +282,11 @@ void RegisterTask::run()
     }
     emit send(getRegisterMsg(strUsername.c_str(),strPassword.c_str(),msgId));
 
-    if(false == pSem->tryAcquire(1,1000*10))//等待3秒
+    if(false == pSem->tryAcquire(1,1000*3))//等待3秒
     {
         messageHandle::getInstance()->deleteMessage(msgId);
+        std::cout << "network overtime"<<std::endl;
+        return;
     }
 
     //处理收到的消息响应
@@ -290,6 +304,96 @@ QString RegisterTask::getRegisterMsg(const QString& username, const QString& pas
     paramsObj.insert("password",password);
     QJsonObject json;
     json.insert("type","register");
+    json.insert("msgId",msgId);
+    json.insert("params",QJsonValue(paramsObj));
+    dom.setObject(json);
+    return dom.toJson(QJsonDocument::Compact);
+}
+
+void MainTask::run()
+{
+    std::string strInput("");
+
+    for(;;)
+    {
+        std::cout << "1. sign in" << std::endl;//login in
+        std::cout << "2. sign up" << std::endl;//register
+        std::cout << "3. exit"<< std::endl;
+        std::cout << "please select : ";
+        std::cin >> strInput;
+
+        if(strInput.empty())
+        {
+            std::cout << "error: input is empty" << std::endl;
+            continue;
+        }
+
+        if(strInput == "1")
+        {
+            SigninTask task(m_parent);
+            connect(&task,&SigninTask::send,m_parent,&Client::onSend);
+            task.run();
+        }
+        else if(strInput == "2")
+        {
+            RegisterTask task(m_parent);
+            connect(&task,&RegisterTask::send,m_parent,&Client::onSend);
+            task.run();
+        }
+        else if(strInput == "3")
+        {
+            emit exitMain();
+            return;
+        }
+        else
+        {
+            std::cout << "error: unknow selection" << std::endl;
+        }
+    }
+
+}
+
+void SigninTask::run()
+{
+    std::string strUsername("");
+    std::string strPassword("");
+    std::cout << "please input username: ";
+    std::cin >> strUsername;
+    std::cout << "please input password: ";
+    std::cin >> strPassword;
+
+    int msgId = messageHandle::getInstance()->getNextMessageId();
+    QSemaphore* pSem = new QSemaphore(0);
+    message* pMsg = new message(msgId,pSem);
+    if(0 != messageHandle::getInstance()->addMessage(pMsg))
+    {
+        qDebug() << "push message into list fail";
+        return;
+    }
+    emit send(getSigninMsg(strUsername.c_str(),strPassword.c_str(),msgId));
+
+    if(false == pSem->tryAcquire(1,1000*3))//等待3秒
+    {
+        messageHandle::getInstance()->deleteMessage(msgId);
+        std::cout << "network overtime" << std::endl;
+        return;
+    }
+
+    //处理收到的消息响应
+    QString responseMsg = messageHandle::getInstance()->getMessage(msgId);
+    qDebug() << responseMsg;
+    //消息回收
+    messageHandle::getInstance()->deleteMessage(msgId);
+}
+
+QString SigninTask::getSigninMsg(const QString &username, const QString &password, const int& msgId )
+{
+    QJsonDocument dom;
+    QJsonObject paramsObj;
+    paramsObj.insert("username",username);
+    paramsObj.insert("password",password);
+    QJsonObject json;
+    json.insert("type","signin");
     json.insert("msgId",msgId);
     json.insert("params",QJsonValue(paramsObj));
     dom.setObject(json);
